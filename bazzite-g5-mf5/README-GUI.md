@@ -10,7 +10,17 @@ The GUI stays unprivileged. A narrowly scoped Polkit rule starts a root-owned he
 
 ## Install on Bazzite
 
-Copy `gfan_ui.py` and `gfan_curve.py` to `~/.local/share/gfan-control/`. Install `gfan_ui_helper.py` root-owned at `/usr/local/libexec/gfan-ui-helper` with mode 0755. Before installing `50-gfan-control.rules.in`, replace `@GFAN_USER@` with the intended local account name and save it as `50-gfan-control.rules` under `/etc/polkit-1/rules.d/`; the helper must remain root-owned and not writable by the desktop user. Install `gfan-control.desktop` to `~/.local/share/applications/gfan-control.desktop` for the application menu; it resolves the app under the current user's home directory. Install `gfan.8` under `~/.local/share/man/man8/` and the text guide under `~/.local/share/doc/gfan/`.
+Download and extract the `gfan-bazzite-g5-mf5-<version>.tar.gz` asset from [the fork's Releases page](https://github.com/jtm2kfpv-git/gigactl-g5-mf5/releases). Open a terminal in the extracted folder and run:
+
+```bash
+./install-bazzite.sh
+```
+
+Run it as your normal desktop account, without `sudo`; it requests administrator authentication itself. The installer builds the bundled `acpi_ec` source for the running kernel, installs the root-owned `gfan` command and Polkit helper, creates a narrowly scoped rule for the current account, installs the app and menu entry, and creates `GFan Control.desktop` in the Desktop folder when one exists. It then loads the module if needed and runs `gfan status`. That final check only reads telemetry; installation never sets fan speed.
+
+The installer refuses systems other than Bazzite on the GIGABYTE G5 MF5. It requires matching kernel build files at `/usr/lib/modules/$(uname -r)/build`, `make`, `/usr/bin/python3` with GTK4/libadwaita, `pkexec`, and Secure Boot disabled. If matching build files are absent, run `rpm-ostree install kernel-devel-matched gcc make`, reboot into the new deployment, then rerun the installer. Secure Boot module signing is not implemented. If GTK bindings are absent, the installer prints the corresponding `rpm-ostree` command and asks you to reboot and rerun.
+
+To remove the installation, use the extracted folder and run `./install-bazzite.sh --uninstall`. It first asks `gfan` to return control to firmware, then removes the installed CLI, helper, Polkit rule, app files and the module for the currently running kernel. It unloads `acpi_ec` only if the kernel permits it. After a kernel update, rerun the installer with build files matching that kernel; automatic rebuild and boot-time loading are intentionally not configured.
 
 ## Curve behavior and limits
 

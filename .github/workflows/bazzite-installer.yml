@@ -1,0 +1,43 @@
+name: Bazzite G5 MF5 installer
+
+on:
+  push:
+    tags:
+      - 'bazzite-g5-mf5-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  installer:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check installer syntax
+        run: bash -n bazzite-g5-mf5/install-bazzite.sh
+
+      - name: Test Bazzite installer archive
+        run: python3 -m pytest packaging/test_bazzite_installer.py -q
+
+      - name: Build release archive
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#bazzite-g5-mf5-v}"
+          python3 packaging/build-bazzite-installer.py --version "$VERSION"
+          tar -tzf "dist/gfan-bazzite-g5-mf5-$VERSION.tar.gz"
+
+      - name: Publish installer archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#bazzite-g5-mf5-v}"
+          ARCHIVE="dist/gfan-bazzite-g5-mf5-$VERSION.tar.gz"
+          NOTES="Bazzite GIGABYTE G5 MF5 guided installer. See bazzite-g5-mf5/README-GUI.md for prerequisites, installation, and limitations."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" --clobber "$ARCHIVE"
+          else
+            gh release create "$TAG" --title "GFan Control for Bazzite G5 MF5 $VERSION" --notes "$NOTES" "$ARCHIVE"
+          fi

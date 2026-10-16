@@ -2,7 +2,7 @@
 
 ## Bazzite G5 MF5 manual-control variant
 
-This fork also contains [`bazzite-g5-mf5/`](bazzite-g5-mf5/), a separately implemented manual fan controller and opt-in desktop cooling curve for Bazzite. It uses the reverse-engineered EC fan-protocol research documented in this repository's [`docs/PROTOCOL.md`](docs/PROTOCOL.md), with attribution to the upstream project and the source commit recorded in the subproject README. It does not install the upstream daemon or replace the main `gigactl` tools.
+This fork also contains [`bazzite-g5-mf5/`](bazzite-g5-mf5/), a separately implemented manual fan controller and opt-in desktop cooling curve for Bazzite. It uses the reverse-engineered EC fan-protocol research documented in this repository's [`docs/PROTOCOL.md`](docs/PROTOCOL.md), with attribution to the upstream project and the source commit recorded in the subproject README. It does not install the upstream daemon or replace the main `gigactl` tools. A guided [Bazzite G5 MF5 installer](bazzite-g5-mf5/README-GUI.md) is available in this fork's Releases.
 
 **Fan and RGB keyboard backlight control for Gigabyte G5 / G6 gaming laptops on Linux.**
 

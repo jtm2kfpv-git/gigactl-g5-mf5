@@ -4,7 +4,9 @@ This project provides a small Python command and desktop GUI for manual fan cont
 
 ## Installation status
 
-This source tree is not yet a one-click “download, install, and run” package. It currently needs a matching `acpi_ec` kernel module, root-owned CLI/helper installation, a per-user Polkit rule, and GTK4/libadwaita. The [GUI guide](README-GUI.md) documents the manual steps. A packaged installer and release artifacts have not been prepared. See the [hardware-validation notes](HARDWARE-VALIDATION.md) and the [2026-10-16 Auto Curve load-test capture](validation-2026-10-16/README.md) for measured behavior and remaining checks.
+The Bazzite release archive includes a guided installer for the CLI, dark GTK app, Polkit helper/rule, desktop-menu entry, desktop shortcut, manual page, and matching `acpi_ec` kernel module. Download and extract `gfan-bazzite-g5-mf5-<version>.tar.gz` from [GitHub Releases](https://github.com/jtm2kfpv-git/gigactl-g5-mf5/releases), open a terminal in the extracted folder, and run `./install-bazzite.sh`. It asks for administrator authentication, builds the module for the running kernel, installs the files, loads the module, and performs a read-only telemetry check. It does not set fan speed during installation. See the [installer guide](README-GUI.md) for prerequisites, kernel updates, and removal.
+
+The installer supports Bazzite on the GIGABYTE G5 MF5 only. It requires matching kernel build files, `make`, Python GTK4/libadwaita bindings, Polkit, and Secure Boot disabled; it stops with a specific instruction if a prerequisite is missing. External-module signing and automatic rebuild after kernel updates are not included. After a kernel update, run the installer again with build files matching the new running kernel. See the [hardware-validation notes](HARDWARE-VALIDATION.md) and the [2026-10-16 Auto Curve load-test capture](validation-2026-10-16/README.md) for measured behavior and remaining checks.
 
 ## Commands on the laptop
 
