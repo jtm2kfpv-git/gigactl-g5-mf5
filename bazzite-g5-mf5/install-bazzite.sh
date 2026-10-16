@@ -2,7 +2,7 @@
 # Install the independent G5 MF5 GFan CLI and desktop app on Bazzite.
 set -Eeuo pipefail
 
-VERSION="0.1.2"
+VERSION="0.2.0"
 SYSTEM_BIN="/usr/local/bin/gfan"
 HELPER="/usr/local/libexec/gfan-ui-helper"
 MODULE_ROOT="/usr/local/lib/bazzite-fan-control"
@@ -46,7 +46,7 @@ if [[ ${1:-} == --uninstall ]]; then
     sudo rm -f -- "/usr/local/share/man/man8/gfan.8" "/usr/local/share/doc/gfan/gfan-manual.txt"
     sudo rm -f -- "$MODULE_ROOT/$(uname -r)/acpi_ec.ko"
     sudo rmdir --ignore-fail-on-non-empty "$MODULE_ROOT/$(uname -r)" "$MODULE_ROOT" 2>/dev/null || true
-    rm -f -- "$APPLICATIONS_DIR/gfan-control.desktop" "$APP_DIR/gfan_ui.py" "$APP_DIR/gfan_curve.py"
+    rm -f -- "$APPLICATIONS_DIR/gfan-control.desktop" "$APP_DIR/gfan_ui.py" "$APP_DIR/gfan_curve.py" "$APP_DIR/gfan_load.py"
     rmdir --ignore-fail-on-non-empty "$APP_DIR" 2>/dev/null || true
     desktop_dir="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
     [[ -n $desktop_dir ]] || desktop_dir="$HOME/Desktop"
@@ -72,7 +72,7 @@ vendor="$(<"$dmi/sys_vendor")"
 model="$(<"$dmi/product_name")"
 [[ $vendor == GIGABYTE && $model == 'G5 MF5' ]] || die "This build supports GIGABYTE G5 MF5 only (detected '$vendor $model')."
 
-for file in gfan.py gfan_ui.py gfan_curve.py gfan_ui_helper.py gfan-control.desktop 50-gfan-control.rules.in gfan.8 gfan-manual.txt acpi_ec/UPSTREAM.md acpi_ec/Makefile acpi_ec/src/Makefile acpi_ec/src/acpi_ec.c acpi_ec/LICENSE; do
+for file in gfan.py gfan_ui.py gfan_curve.py gfan_load.py gfan_ui_helper.py gfan-control.desktop 50-gfan-control.rules.in gfan.8 gfan-manual.txt acpi_ec/UPSTREAM.md acpi_ec/Makefile acpi_ec/src/Makefile acpi_ec/src/acpi_ec.c acpi_ec/LICENSE; do
     [[ -f $SOURCE_DIR/$file ]] || die "Installer package is incomplete; missing $file. Extract the complete release archive and try again."
 done
 
@@ -136,6 +136,7 @@ sudo chmod 0644 "$POLKIT_RULE"
 install -d -m 0755 "$APP_DIR" "$APPLICATIONS_DIR"
 install -m 0644 "$SOURCE_DIR/gfan_ui.py" "$APP_DIR/gfan_ui.py"
 install -m 0644 "$SOURCE_DIR/gfan_curve.py" "$APP_DIR/gfan_curve.py"
+install -m 0644 "$SOURCE_DIR/gfan_load.py" "$APP_DIR/gfan_load.py"
 install -m 0644 "$SOURCE_DIR/gfan-control.desktop" "$APPLICATIONS_DIR/gfan-control.desktop"
 
 desktop_dir="$(xdg-user-dir DESKTOP 2>/dev/null || true)"

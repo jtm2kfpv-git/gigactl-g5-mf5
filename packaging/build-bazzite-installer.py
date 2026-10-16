@@ -19,6 +19,7 @@ FILES = [
     Path("bazzite-g5-mf5/gfan.py"),
     Path("bazzite-g5-mf5/gfan_ui.py"),
     Path("bazzite-g5-mf5/gfan_curve.py"),
+    Path("bazzite-g5-mf5/gfan_load.py"),
     Path("bazzite-g5-mf5/gfan_ui_helper.py"),
     Path("bazzite-g5-mf5/gfan-control.desktop"),
     Path("bazzite-g5-mf5/50-gfan-control.rules.in"),
@@ -88,7 +89,7 @@ def build(version: str, output: Path) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", default="0.1.2")
+    parser.add_argument("--version", default="0.2.0")
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     destination = args.output

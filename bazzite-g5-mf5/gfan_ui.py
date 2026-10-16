@@ -7,6 +7,7 @@ import threading
 
 import gi
 from gfan_curve import AutoCurve
+from gfan_load import CpuLoadReader, gpu_percent
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, GLib, Gtk
@@ -24,6 +25,11 @@ window { background: #111318; color: #e7e9ee; }
 .section-title { font-size: 18px; font-weight: 650; }
 .fan-percent { font-size: 25px; font-weight: 650; }
 .status-pill { background: #292d36; border-radius: 999px; padding: 6px 12px; }
+.load-meter trough { border: 2px solid #25c66a; border-radius: 8px; background: #111814; }
+.load-meter block { min-width: 14px; min-height: 7px; margin: 1px; border-radius: 5px; }
+.load-meter block.filled { background: #25c66a; }
+.load-meter block.empty { background: #242d27; }
+.load-percent { color: #25c66a; font-size: 13px; font-weight: 650; }
 button.suggested-action { background: #6c8cff; color: #10131a; }
 scale trough { min-height: 8px; }
 scale highlight { background: #7894ff; }
@@ -105,11 +111,18 @@ class GfanWindow(Gtk.ApplicationWindow):
         self.last_manual_state = None
         self.curve = AutoCurve()
         self.curve_active = False
+        self.curve_start_pending = True
         self.curve_duty = None
         self.pending_write = None
+        self.cpu_load_reader = CpuLoadReader()
+        self.gpu_load_stop = threading.Event()
         self._make_ui()
+        self.curve_button.set_label("Stop Auto Curve")
+        self.mode.set_text("Auto Curve · waiting for sensors")
         self.connect("close-request", self._close_request)
         self.timer = GLib.timeout_add(250, self._poll)
+        self.gpu_load_thread = threading.Thread(target=self._gpu_load_loop, daemon=True)
+        self.gpu_load_thread.start()
         self._poll()
 
     def _make_ui(self):
@@ -181,14 +194,28 @@ class GfanWindow(Gtk.ApplicationWindow):
         root.append(footer)
 
     def _temp_tile(self, title):
-        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True)
+        card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, hexpand=True)
         card.add_css_class("card")
-        card.append(Gtk.Label(label=title, xalign=0, css_classes=["section-title"]))
+        readings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True)
+        readings.append(Gtk.Label(label=title, xalign=0, css_classes=["section-title"]))
         value = Gtk.Label(label="— °C", xalign=0, css_classes=["reading"])
-        card.append(value)
+        readings.append(value)
         detail = Gtk.Label(label="Embedded controller", xalign=0, css_classes=["label"])
-        card.append(detail)
-        return card, value, detail
+        readings.append(detail)
+        card.append(readings)
+
+        load_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, valign=Gtk.Align.CENTER)
+        meter = Gtk.LevelBar.new_for_interval(0, 100)
+        meter.set_orientation(Gtk.Orientation.VERTICAL)
+        meter.set_inverted(True)
+        meter.set_size_request(22, 64)
+        meter.add_css_class("load-meter")
+        meter.set_value(0)
+        load_box.append(meter)
+        load_value = Gtk.Label(label="—%", css_classes=["load-percent"])
+        load_box.append(load_value)
+        card.append(load_box)
+        return card, value, detail, meter, load_value
 
     def _slider_changed(self, scale):
         value = round(scale.get_value())
@@ -196,10 +223,29 @@ class GfanWindow(Gtk.ApplicationWindow):
 
     def _poll(self):
         self._drain_results()
+        cpu_percent = self.cpu_load_reader.sample()
+        self._set_load(self.cpu_temp, cpu_percent)
         if not self.busy:
             self.busy = True
             self.status_backend.status()
         return GLib.SOURCE_CONTINUE
+
+    def _gpu_load_loop(self):
+        while not self.gpu_load_stop.is_set():
+            value = gpu_percent()
+            GLib.idle_add(self._set_gpu_load, value)
+            if self.gpu_load_stop.wait(1.0):
+                return
+
+    def _set_gpu_load(self, value):
+        if not self.gpu_load_stop.is_set():
+            self._set_load(self.gpu_temp, value)
+        return GLib.SOURCE_REMOVE
+
+    @staticmethod
+    def _set_load(tile, value):
+        tile[3].set_value(value if value is not None else 0)
+        tile[4].set_text(f"{value}%" if value is not None else "N/A")
 
     def _drain_results(self):
         self._drain_status_results()
@@ -220,7 +266,10 @@ class GfanWindow(Gtk.ApplicationWindow):
                 snapshot = result.get("snapshot")
                 if snapshot:
                     self._update(snapshot, result.get("manual_state"))
-                    if self.curve_active:
+                    if self.curve_start_pending:
+                        self.curve_start_pending = False
+                        self._start_curve()
+                    elif self.curve_active:
                         self._curve_sample(snapshot)
         except queue.Empty:
             pass
@@ -281,6 +330,7 @@ class GfanWindow(Gtk.ApplicationWindow):
 
     def _close_request(self, _window):
         GLib.source_remove(self.timer)
+        self.gpu_load_stop.set()
         self.backend.close()
         self.status_backend.close()
         return False
@@ -298,6 +348,8 @@ class GfanWindow(Gtk.ApplicationWindow):
         if self.curve_active:
             shown = self.curve_duty if self.curve_duty is not None else self.curve.current
             self.mode.set_text(f"Auto Curve · {shown}%" if shown is not None else "Auto Curve · starting")
+        elif self.curve_start_pending:
+            self.mode.set_text("Auto Curve · waiting for sensors")
         elif manual_state:
             value = manual_state.get("requested_percent", [])
             shown = value[0] if value and len(set(value)) == 1 else "custom"
@@ -310,6 +362,7 @@ class GfanWindow(Gtk.ApplicationWindow):
             self.message.set_text("A fan change is already in progress. Wait for its readback.")
             return
         value = round(self.scale.get_value())
+        self.curve_start_pending = False
         self.curve_active = False
         self.curve_button.set_label("Enable Auto Curve")
         self.curve_duty = None
@@ -322,10 +375,25 @@ class GfanWindow(Gtk.ApplicationWindow):
         if self.operation_pending:
             self.message.set_text("A fan change is already in progress. Wait for its readback.")
             return
+        if self.curve_start_pending:
+            self.curve_start_pending = False
+            self.curve_button.set_label("Enable Auto Curve")
+            self.mode.set_text("No manual request")
+            self.message.set_text("Auto Curve startup cancelled. Enable it here whenever you want it to control the fans.")
+            return
         if self.curve_active:
             self.curve_active = False
             self.curve_button.set_label("Enable Auto Curve")
             self.message.set_text("Auto Curve stopped. Fans remain at their last manual duty; Firmware Auto is separate.")
+            return
+        if not self.last_snapshot:
+            self.message.set_text("Waiting for a valid temperature reading before starting Auto Curve.")
+            return
+        self._start_curve()
+
+    def _start_curve(self):
+        if self.operation_pending:
+            self.message.set_text("A fan change is already in progress. Wait for its readback.")
             return
         if not self.last_snapshot:
             self.message.set_text("Waiting for a valid temperature reading before starting Auto Curve.")
@@ -336,6 +404,9 @@ class GfanWindow(Gtk.ApplicationWindow):
                 self.last_snapshot.get("cpu_core_c"),
             )
         except (KeyError, TypeError, ValueError) as exc:
+            self.curve_active = False
+            self.curve_button.set_label("Enable Auto Curve")
+            self.mode.set_text("Needs attention")
             self.message.set_text(f"Auto Curve could not start: {exc}")
             return
         self.curve_active = True
@@ -368,6 +439,7 @@ class GfanWindow(Gtk.ApplicationWindow):
         if self.operation_pending:
             self.message.set_text("A fan change is already in progress. Wait for its readback.")
             return
+        self.curve_start_pending = False
         self.curve_active = False
         self.curve_button.set_label("Enable Auto Curve")
         self.curve_duty = None

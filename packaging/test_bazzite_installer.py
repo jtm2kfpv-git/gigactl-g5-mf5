@@ -50,6 +50,7 @@ def test_release_archive_contains_every_installed_component(tmp_path: Path):
         module_license = archive.extractfile(top + "acpi_ec/LICENSE")
         assert module_license is not None
         assert b"GNU GENERAL PUBLIC LICENSE" in module_license.read(128)
+        assert top + "gfan_load.py" in members
 
 
 def test_installer_does_not_apply_a_fan_setting():

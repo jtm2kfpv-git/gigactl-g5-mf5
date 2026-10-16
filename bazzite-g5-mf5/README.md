@@ -21,7 +21,7 @@ sudo gfan test 60 --seconds 10  # increase-only trial; restore firmware afterwar
 
 Use the single-percentage form initially. The two register/command channels are observed, but physical CPU/GPU cooling responsibility has not been independently identified. Duty percentage is a command value, not a percentage of maximum measured RPM. Raw duty 153 corresponds to 60%.
 
-Manual values are restricted to 30–100%. Implausible EC temperatures are rejected; requests below 70% are rejected when either EC component or a coretemp sensor is at least 85°C. All manual requests are rejected at 95°C. These checks occur during the command, not continuously after it exits. `auto` remains available even at high temperatures. The GUI curve provides supervision only while enabled and the window remains open; it is not enabled at boot.
+Manual values are restricted to 30–100%. Implausible EC temperatures are rejected; requests below 70% are rejected when either EC component or a coretemp sensor is at least 85°C. All manual requests are rejected at 95°C. These checks occur during the command, not continuously after it exits. `auto` remains available even at high temperatures. Opening the GUI automatically starts its software curve after the first valid temperature reading; you can stop it in the window. It only runs while the GUI stays open and is not started at boot.
 
 The CLI serializes its own operations using `/run/lock/gigactl-ec.lock`, refuses when gigactld or known competing controllers are active, waits for mailbox acknowledgement, and checks duty readback. Errors after a set begins trigger independent restoration attempts for both fans. A short `test` also restores on Ctrl+C, SIGHUP or SIGTERM. SIGKILL, a kernel/device hang, machine failure, or another controller can prevent software cleanup; no claim of unconditional recovery is made. A successful ordinary `gfan 60` intentionally leaves the requested duty in place.
 
@@ -65,4 +65,4 @@ First run `sudo gfan auto` and verify the fans have returned to normal firmware 
 
 ## Next stage
 
-The GUI software curve uses the hottest available CPU/GPU temperature, hysteresis, separate telemetry polling, and the shared EC command path. It remains opt-in and requires the GUI to stay open.
+The GUI software curve uses the hottest available CPU/GPU temperature, hysteresis, separate telemetry polling, and the shared EC command path. It starts when the GUI opens and requires the window to stay open.
