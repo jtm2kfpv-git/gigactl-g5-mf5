@@ -1,0 +1,13 @@
+Requested maximum duration: 60s
+Cooldown sampling: 45s
+Stress-ng: --cpu 0 --cpu-load 100 --vm 2 --vm-bytes 35% --timeout 60s --metrics-brief
+vkmark: Wayland window 800x600, looping for up to 60s
+Dedicated NVIDIA device selected: yes
+Telemetry target: one sample per second via read-only 'sudo gfan status', plus coretemp, NVIDIA utilization, and available memory
+Observed combined-load sampling: 41 samples across 53 seconds; mean interval 1.33s, maximum interval 2s
+Fan control: Auto Curve was visibly enabled before the run; this script does not alter fan settings
+Safety stop: 90 C, a curve response shortfall persisting 8 samples, or less than 1 GiB available memory
+
+Result: thermal-limit-90C
+Samples: 91 (5 baseline, 41 combined load, 45 cooldown)
+Stress-ng reported a 55.30s run; capture stopped the load at the 90 C safety cutoff.

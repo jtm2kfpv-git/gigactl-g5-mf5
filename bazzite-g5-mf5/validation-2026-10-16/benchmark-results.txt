@@ -1,0 +1,14 @@
+Vulkan benchmark:
+    Device Name:    NVIDIA GeForce RTX 4050 Laptop GPU
+[vertex] device-local=true: FPS: 266 FrameTime: 3.759 ms
+[vertex] device-local=false: FPS: 134 FrameTime: 7.463 ms
+                                   vkmark Score: 162
+
+CPU and memory stress:
+stress-ng: metrc:  stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s
+stress-ng: metrc:                            (secs)    (secs)    (secs)   (real time) (usr+sys time)
+stress-ng: metrc:  cpu             1163469     55.11    760.50      0.62     21113.45        1528.61
+stress-ng: metrc:  vm             10605852     55.29     72.43     21.30    191819.88      113157.54
+stress-ng: info:   passed: 18: cpu (16) vm (2)
+stress-ng: info:   failed: 0
+stress-ng: info:   successful run completed in 55.30 secs

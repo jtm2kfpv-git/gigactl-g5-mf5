@@ -4,7 +4,7 @@ This project provides a small Python command and desktop GUI for manual fan cont
 
 ## Installation status
 
-This source tree is not yet a one-click “download, install, and run” package. It currently needs a matching `acpi_ec` kernel module, root-owned CLI/helper installation, a per-user Polkit rule, and GTK4/libadwaita. The [GUI guide](README-GUI.md) documents the manual steps. A packaged installer and release artifacts have not been prepared.
+This source tree is not yet a one-click “download, install, and run” package. It currently needs a matching `acpi_ec` kernel module, root-owned CLI/helper installation, a per-user Polkit rule, and GTK4/libadwaita. The [GUI guide](README-GUI.md) documents the manual steps. A packaged installer and release artifacts have not been prepared. See the [hardware-validation notes](HARDWARE-VALIDATION.md) and the [2026-10-16 Auto Curve load-test capture](validation-2026-10-16/README.md) for measured behavior and remaining checks.
 
 ## Commands on the laptop
 
