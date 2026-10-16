@@ -2,7 +2,7 @@
 # Install the independent G5 MF5 GFan CLI and desktop app on Bazzite.
 set -Eeuo pipefail
 
-VERSION="0.1.1"
+VERSION="0.1.2"
 SYSTEM_BIN="/usr/local/bin/gfan"
 HELPER="/usr/local/libexec/gfan-ui-helper"
 MODULE_ROOT="/usr/local/lib/bazzite-fan-control"

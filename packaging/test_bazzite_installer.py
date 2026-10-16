@@ -42,6 +42,9 @@ def test_release_archive_contains_every_installed_component(tmp_path: Path):
             member = members[top + archive_path(path).as_posix()]
             assert member.isfile(), path
             assert member.size > 0, path
+            if path.suffix.lower() != ".png":
+                contents = archive.extractfile(member).read()
+                assert b"\r\n" not in contents, path
         installer = members[top + "install-bazzite.sh"]
         assert installer.mode & 0o111
         module_license = archive.extractfile(top + "acpi_ec/LICENSE")

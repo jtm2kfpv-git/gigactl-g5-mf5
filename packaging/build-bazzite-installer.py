@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import io
 from pathlib import Path
 import re
 import tarfile
@@ -73,19 +74,21 @@ def build(version: str, output: Path) -> Path:
                 archive.addfile(entry)
             for path, packaged_path in packaged:
                 source = ROOT / path
+                contents = source.read_bytes()
+                if source.suffix.lower() != ".png":
+                    contents = contents.replace(b"\r\n", b"\n")
                 entry = tarfile.TarInfo(f"{top}/{packaged_path.as_posix()}")
-                entry.size = source.stat().st_size
+                entry.size = len(contents)
                 entry.mode = 0o755 if packaged_path.name == "install-bazzite.sh" else 0o644
                 entry.uid = entry.gid = entry.mtime = 0
                 entry.uname = entry.gname = ""
-                with source.open("rb") as contents:
-                    archive.addfile(entry, contents)
+                archive.addfile(entry, io.BytesIO(contents))
     return output
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", default="0.1.1")
+    parser.add_argument("--version", default="0.1.2")
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     destination = args.output
