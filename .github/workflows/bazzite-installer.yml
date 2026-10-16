@@ -14,6 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install test tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-pytest
+
       - name: Check installer syntax
         run: bash -n bazzite-g5-mf5/install-bazzite.sh
 

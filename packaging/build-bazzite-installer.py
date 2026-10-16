@@ -85,7 +85,7 @@ def build(version: str, output: Path) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", default="0.1.0")
+    parser.add_argument("--version", default="0.1.1")
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     destination = args.output
