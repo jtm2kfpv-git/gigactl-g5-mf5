@@ -1,0 +1,8 @@
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        subject.user == "@GFAN_USER@" &&
+        (action.lookup("program") == "/usr/local/libexec/gfan-ui-helper" ||
+         action.lookup("program") == "/var/usrlocal/libexec/gfan-ui-helper")) {
+        return polkit.Result.YES;
+    }
+});

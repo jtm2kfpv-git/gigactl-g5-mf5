@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+hardware-readback.json
+.env
+.env.*
+*.key
+*.pem
+id_rsa*
+id_ed25519*

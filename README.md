@@ -1,5 +1,9 @@
 # gigactl
 
+## Bazzite G5 MF5 manual-control variant
+
+This fork also contains [`bazzite-g5-mf5/`](bazzite-g5-mf5/), a separately implemented manual fan controller and opt-in desktop cooling curve for Bazzite. It uses the reverse-engineered EC fan-protocol research documented in this repository's [`docs/PROTOCOL.md`](docs/PROTOCOL.md), with attribution to the upstream project and the source commit recorded in the subproject README. It does not install the upstream daemon or replace the main `gigactl` tools.
+
 **Fan and RGB keyboard backlight control for Gigabyte G5 / G6 gaming laptops on Linux.**
 
 Gigabyte ships no Linux software for its G-series laptops. The firmware fan curve is lazy (it holds low fan duty until the CPU throttles at ~96 °C), the keyboard backlight can't be changed, and tools like NBFC, fancontrol and OpenRGB don't support these machines.

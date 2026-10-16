@@ -1,0 +1,88 @@
+.TH GFAN 8 "October 2026" "gfan 0.1.0" "System Administration"
+.SH NAME
+gfan \- read and manually control fans on a GIGABYTE G5 MF5
+.SH SYNOPSIS
+.B sudo gfan
+.RI [ status ]
+.br
+.B sudo gfan
+.I PERCENT
+.RI [ PERCENT2 ]
+.br
+.B sudo gfan max
+.br
+.B sudo gfan auto
+.br
+.B sudo gfan test
+.I PERCENT
+.RB [ --seconds
+.IR SECONDS ]
+.br
+.B gfan --version
+.SH DESCRIPTION
+.B gfan
+reads embedded-controller temperatures, fan-duty readback, and approximate fan RPM, or sends a bounded manual fan command. It is restricted to the GIGABYTE G5 MF5 and uses the kernel-mediated
+.B /dev/ec
+interface. The CLI is one-shot and does not provide an automatic temperature curve or background supervision. The separate GFan Control GUI includes an opt-in software curve while its window remains open.
+.PP
+Commands that access the embedded controller require root privileges, normally via
+.BR sudo .
+The GUI uses a separate narrowly scoped Polkit helper.
+.SH COMMANDS
+.TP
+.B status
+Read CPU and GPU temperatures, both raw fan-duty values, and approximate tachometer RPM. This is the default command. The output is JSON followed by a note that duty and RPM do not reveal whether firmware or manual control is active.
+.TP
+.BI PERCENT " [PERCENT2]"
+Set fan 1 to
+.I PERCENT
+and, optionally, fan 2 to
+.IR PERCENT2 .
+Each value must be a whole number from 30 through 100. If the second value is omitted, both fans receive the same duty. The requested duty stays in effect after the command exits until firmware auto is requested or another controller changes it.
+.TP
+.B max
+Set both fans to 100% duty. This is equivalent to
+.BR "gfan 100" .
+.TP
+.B auto
+Send the firmware-auto command to both fans and remove the transient manual-request record. The firmware then chooses fan speeds.
+.TP
+.BI "test " PERCENT
+Run an increase-only trial on both fans for the requested duration, then request firmware auto. The value must be 30 through 100. It cannot lower either fan below its starting duty.
+.TP
+.BI --seconds " SECONDS"
+Set the test duration from 1 to 30 seconds. The default is 10 seconds.
+.TP
+.B --version
+Print the CLI version.
+.SH SAFETY
+Before manual writes, gfan checks the laptop model, known competing fan controllers, the embedded-controller lock, and plausible temperatures. At 95 degrees C or higher, only 100% duty is allowed. At 85 degrees C or higher, requests below 70% are refused. Firmware auto remains available as an explicit command.
+.PP
+The checks run when a command is issued; they do not supervise temperatures afterward. If a rising temperature trips a guard during readback, gfan attempts 80% at 85 degrees C or 100% at 95 degrees C and keeps firmware control disabled. A manual value is not a fan curve and is not automatically restored at boot. Use
+.B auto
+to return control to the firmware.
+.SH OUTPUT
+Temperatures are degrees C. Raw duty is an 8-bit EC readback from 0 to 255; the displayed percentage is an approximate scaling of that command value, not a measured percentage of maximum RPM. RPM is estimated from the EC tachometer period. The EC interface reports two channels, fan 1 and fan 2; their physical CPU/GPU cooling assignment has not been independently verified.
+.SH EXAMPLES
+.nf
+sudo gfan status
+sudo gfan 60                 # both fans at 60%
+sudo gfan 60 70              # fan 1 at 60%, fan 2 at 70%
+sudo gfan max                # both fans at 100%
+sudo gfan auto               # return both fans to firmware
+sudo gfan test 70 --seconds 8
+.fi
+.SH FILES
+.TP
+.B /run/gfan-manual.json
+Transient record of the last successfully requested manual percentage. It is not proof that the EC remains in manual mode and is removed by
+.BR auto .
+.TP
+.B /run/lock/gigactl-ec.lock
+Lock used to serialize this tool's embedded-controller operations.
+.SH SEE ALSO
+.BR sudo (8)
+.SH AUTHOR
+Local G5 MF5 manual-control utility; fan protocol attribution is documented in the project README.
+.SH NOTES
+The CLI has no background temperature supervision. The GFan Control GUI offers a separate software curve with hysteresis and a 0.25-second status polling interval; keep its window open while the curve is enabled. The curve holds 40% below 50 degrees C, then uses 55% at 50, 65% at 60, 80% at 70, and 100% at 80 degrees C. Firmware Auto is an explicit command and does not run the GUI curve.

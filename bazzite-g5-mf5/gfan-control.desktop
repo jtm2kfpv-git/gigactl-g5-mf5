@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=GFan Control
+Comment=Monitor temperatures and set G5 MF5 fan speed
+Exec=/bin/sh -c "exec /usr/bin/python3 \"$HOME/.local/share/gfan-control/gfan_ui.py\""
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Monitor;
+StartupNotify=true

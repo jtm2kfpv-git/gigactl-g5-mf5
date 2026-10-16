@@ -1,0 +1,102 @@
+GFAN(8)                 System Administration                  GFAN(8)
+
+NAME
+    gfan - read and manually control fans on a GIGABYTE G5 MF5
+
+SYNOPSIS
+    sudo gfan [status]
+    sudo gfan PERCENT [PERCENT2]
+    sudo gfan max
+    sudo gfan auto
+    sudo gfan test PERCENT [--seconds SECONDS]
+    gfan --version
+
+DESCRIPTION
+    gfan reads embedded-controller temperatures, fan-duty readback, and
+    approximate fan RPM, or sends a bounded manual fan command. It is
+    restricted to the GIGABYTE G5 MF5 and uses the kernel-mediated /dev/ec
+    interface. It does not provide an automatic temperature curve or
+    background supervision.
+
+    Commands that access the embedded controller require root privileges,
+    normally via sudo. The GUI uses a separate narrowly scoped Polkit helper.
+
+COMMANDS
+    status
+        Read CPU and GPU temperatures, both raw fan-duty values, and
+        approximate tachometer RPM. This is the default command. Output is
+        JSON followed by a note that duty and RPM do not reveal whether
+        firmware or manual control is active.
+
+    PERCENT [PERCENT2]
+        Set fan 1 to PERCENT and, optionally, fan 2 to PERCENT2. Each value
+        must be a whole number from 30 through 100. If the second value is
+        omitted, both fans receive the same duty. The requested duty stays
+        in effect after the command exits until firmware auto is requested
+        or another controller changes it.
+
+    max
+        Set both fans to 100% duty. Equivalent to: sudo gfan 100
+
+    auto
+        Send the firmware-auto command to both fans and remove the transient
+        manual-request record. Firmware then chooses fan speeds.
+
+    test PERCENT [--seconds SECONDS]
+        Run an increase-only trial on both fans for the requested duration,
+        then request firmware auto. The value is 30 through 100 and cannot
+        lower either fan below its starting duty. Duration is 1 through 30
+        seconds; default is 10 seconds.
+
+    --version
+        Print the CLI version.
+
+SAFETY
+    Before manual writes, gfan checks the laptop model, known competing fan
+    controllers, the embedded-controller lock, and plausible temperatures.
+    At 95 C or higher, only 100% duty is allowed. At 85 C or higher,
+    requests below 70% are refused. Firmware auto remains available as an
+    explicit command.
+
+    These checks run when a command is issued; the CLI does not supervise
+    temperatures afterward. If a rising temperature trips the guard during
+    readback of a lower duty, gfan attempts 80% at 85 C or 100% at 95 C and
+    keeps firmware control disabled. Use 'sudo gfan auto' to explicitly
+    return control to firmware.
+
+OUTPUT
+    Temperatures are degrees C. Raw duty is an 8-bit EC readback from 0 to
+    255; percentage is an approximate scaling of that command value, not a
+    measured percentage of maximum RPM. RPM is estimated from the EC
+    tachometer period. The EC interface reports fan 1 and fan 2; their
+    physical CPU/GPU cooling assignment has not been independently verified.
+
+EXAMPLES
+    sudo gfan status
+    sudo gfan 60                 # both fans at 60%
+    sudo gfan 60 70              # fan 1 at 60%, fan 2 at 70%
+    sudo gfan max                # both fans at 100%
+    sudo gfan auto               # return both fans to firmware
+    sudo gfan test 70 --seconds 8
+
+FILES
+    /run/gfan-manual.json
+        Transient record of the last successfully requested manual duty. It
+        is not proof that the EC remains in manual mode and is removed by
+        'auto'.
+
+    /run/lock/gigactl-ec.lock
+        Lock used to serialize this tool's embedded-controller operations.
+
+SEE ALSO
+    sudo(8)
+
+NOTES
+    The CLI has no background temperature supervision. GFan Control offers
+    a separate software curve with hysteresis and a 0.25-second status
+    polling interval; keep its window open while enabled. The curve holds
+    40% below 50 C, then uses 55% at 50, 65% at 60, 80% at 70, and 100% at
+    80 C. Firmware Auto is explicit and does not run the GUI curve.
+
+Local G5 MF5 utility, version 0.1.0. See the project README for fan protocol
+attribution and installation details.
